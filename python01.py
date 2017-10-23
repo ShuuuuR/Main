@@ -51,8 +51,8 @@ resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + '
 resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'vlan-tags outer' + ' ' + svlan)
 resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'vlan-tags inner' + ' ' + cvlan)
 resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet rpf-check')
-#resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet policer input lim' + vardict.get('speed') + bw)
-#resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet policer output lim' + vardict.get('speed') + bw)
+resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet policer input lim' + vardict.get('speed') + bw)
+resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet policer output lim' + vardict.get('speed') + bw)
 resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet address' + ' ' + vardict.get('ipad') + vardict.get('ipmask'))
 if vardict.get('vpn'):
     resultlist.append('set routing-instances' + ' ' + vardict.get('vpn') + ' ' + 'interface' + ' ' + interf + '.' + uni) 
