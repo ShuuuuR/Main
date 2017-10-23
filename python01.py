@@ -6,14 +6,7 @@ uni = input('Введите №.юнита \n')
 svlan = input('Введите Svlan \n')
 cvlan = input('Введите inner-vlan \n')
 pp = input('Введите №ПП')
-bw = input('Единицы измерения скорости 1-Kbit/2-Mbit')
-bw=int(bw)
-if bw == 1:
-    bwu = 'k'
-elif bw == 2:
-    bwu = 'm'
-else:
-    print('Скорость сам!')
+bw = input('Название скоростного полисера на терминации "limXm"')
 
 
 
@@ -36,7 +29,6 @@ with open('temp01', 'r') as f:
         cms = re.search('(CMS\S)\s*(\d+\S\d+\S\d?)', line)
         surms = re.search('Дата и номер:\s*(\d+\.)+\d+\s\S(\d+)', line)
         vpn = re.search('\S+\sVPN:\s(\S+)\s\(\S+\)', line)
-        speed = re.search('(FE|E)\s*(\d+)\s*.*ВКЛ$', line)
         if ipmask:
              ipmask = ipmask.group(2)
              vardict['ipmask'] = str(ipmask)
@@ -52,9 +44,6 @@ with open('temp01', 'r') as f:
         elif vpn:
              vpn = vpn.group(1)
              vardict['vpn'] = str(vpn)
-        elif speed:
-             speed = speed.group(2)
-             vardict['speed'] = str(speed)
         else:
              continue 
 #print(vardict)
@@ -62,8 +51,8 @@ resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + '
 resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'vlan-tags outer' + ' ' + svlan)
 resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'vlan-tags inner' + ' ' + cvlan)
 resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet rpf-check')
-resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet policer input lim' + vardict.get('speed') + bwu)
-resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet policer output lim' + vardict.get('speed') + bwu)
+#resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet policer input lim' + vardict.get('speed') + bw)
+#resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet policer output lim' + vardict.get('speed') + bw)
 resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet address' + ' ' + vardict.get('ipad') + vardict.get('ipmask'))
 if vardict.get('vpn'):
     resultlist.append('set routing-instances' + ' ' + vardict.get('vpn') + ' ' + 'interface' + ' ' + interf + '.' + uni) 
