@@ -1,13 +1,19 @@
 import re
+import os
 
 # -*- coding: utf-8 -*-
 interf = input('Введите интерфейс \n')
 uni = input('Введите №.юнита \n')
 svlan = input('Введите Svlan \n')
 cvlan = input('Введите inner-vlan \n')
+cpe = input('Введите hostname CPE \n')
+cpeport = input('Введите порт на CPE \n')
+family = input('Введите ФИО \n')
 pp = input('Введите №ПП')
 bw = input('Название скоростного полисера на терминации "limXm"')
-
+date = os.popen("date +%d.%m.%Y").read() 
+#comandcpip = print('ping' + ' ' +  cpe + '-c 1 | grep PING | awk \'{print $3}\'')
+cpeip = os.popen("ping " + cpe " -c 1 | grep PING | awk '{print $3}'").read()
 
 
 resultlist = []
@@ -47,12 +53,14 @@ with open('temp01', 'r') as f:
         else:
              continue 
 #print(vardict)
-resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'description \"##XXX SURMS:' + vardict.get('surms') + ' ' + vardict.get('cms') + ' '+ 'pp' + pp + ' ' + '##\"')
+#resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'description \"##XXX SURMS:' + vardict.get('surms') + ' ' + vardict.get('cms') + ' '+ 'pp' + pp + ' ' + '##\"')
+resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'description \"#' + vardict.get('vpn') + ',' + ' ' + 'ClientXXX' + ' ' + 'SURMS:' + vardict.get('surms')+ ',' + ' ' + date + ' ' + '|' + ' ' + 'SVL:' + svlan + ' ' + 'CVL:' + cvlan + ',' + 'GOROD, ULICA' + ' ' + '|' + ' ' + cpe + ':' + cpeport + ' ' +  '|' + ' ' + 'pp' + pp + ' ' + '|' + ' ' + family +' ' + '#\"')
+resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'vlan-tags outer' + ' ' + svlan)
 resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'vlan-tags outer' + ' ' + svlan)
 resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'vlan-tags inner' + ' ' + cvlan)
 resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet rpf-check')
-resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet policer input lim' + vardict.get('speed') + bw)
-resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet policer output lim' + vardict.get('speed') + bw)
+#resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet policer input lim' + vardict.get('speed') + bw)
+#resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet policer output lim' + vardict.get('speed') + bw)
 resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet address' + ' ' + vardict.get('ipad') + vardict.get('ipmask'))
 if vardict.get('vpn'):
     resultlist.append('set routing-instances' + ' ' + vardict.get('vpn') + ' ' + 'interface' + ' ' + interf + '.' + uni) 
