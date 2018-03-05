@@ -20,15 +20,18 @@ DATE = str(date)
 resultlist = []
 vardict = {}
 
-resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet rpf-check')
 # тут придумать что делать с полиесром resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni 'family inet filter input' PochtaRF-512k-50-25-25-in
-resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet policer arp per-int-arp-policer')
 
 
 
 
 
-
+with open('temp01', 'r') as f:
+    fiz = re.compile('Примечание: Адрес предоставления услуги:\s(?P<x>.*)', re.M)
+    fizaddr = fiz.findall(f.read()) 
+    if fizaddr:
+        fizaddr = translit(','.join(fizaddr), 'ru', reversed=True)
+        vardict['fizaddr'] = str(fizaddr)
 with open('temp01', 'r') as f:
     for line in f:
         ipmask = re.search('([0-9]+\.)+[0-9]+\s(\/\d{2})', line) 
@@ -36,7 +39,6 @@ with open('temp01', 'r') as f:
         cms = re.search('(CMS\S)\s*(\d+\S\d+\S\d?)', line)
         surms = re.search('Дата и номер:\s*(\d+\.)+\d+\s\S(\d+)', line)
         vpn = re.search('^VPN ID:\s(\d*)', line)
-        fizaddr = re.search('^68\d{4}.\s(.*)', line)
         clientname = re.search('^Тема:\s(.*)', line) 
         if ipmask:
              ipmask = ipmask.group(2)
@@ -53,15 +55,13 @@ with open('temp01', 'r') as f:
         elif vpn:
              vpn = vpn.group(1)
              vardict['vpn'] = str(vpn)
-        elif fizaddr:
-             fizaddr = translit(fizaddr.group(1), reversed=True)
-             vardict['fizaddr'] = str(fizaddr)
         elif clientname:
              clientname = translit(clientname.group(1), reversed=True)
              vardict['clientname'] = str((clientname.lower()).capitalize())
         else:
              continue 
-print(vardict)
+#print(vardict.get('fizaddr'))
+#print(vardict)
 print('-'*100)
 if vardict.get('vpn'):
     resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'description \"##VPN:v' + vardict.get('vpn') + ',' + ' ' + vardict.get('clientname') + ', ' + 'SURMS:' + vardict.get('surms')+ ',' + ' ' + DATE + ' ' + '|' + ' ' + 'SVL:' + svlan + ' ' + 'CVL:' + cvlan + ',' + ' ' + vardict.get('fizaddr') + ' ' + '|' + ' ' + cpe + ':' + cpeport + ' ' +  '|' + ' ' + 'pp' + pp + ' ' + '|' + ' ' + 'Motovilov' +' ' + '##\"')
