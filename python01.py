@@ -7,7 +7,7 @@ from transliterate import translit
 
 # -*- coding: utf-8 -*-
 interf = input('Введите интерфейс \n')
-uni = input('Введите №.юнита \n')
+#uni = input('Введите №.юнита \n')
 svlan = input('Введите Svlan \n')
 cvlan = input('Введите inner-vlan \n')
 cpe = input('Введите hostname CPE \n')
@@ -18,6 +18,7 @@ bw = input('Название скоростного полисера на тер
 date = (os.popen("date +%d.%m.%Y").read()).strip()
 #comandcpip = print('ping' + ' ' +  cpe + '-c 1 | grep PING | awk \'{print $3}\'')
 #cpeip = os.popen("ping " + cpe " -c 1 | grep PING | awk '{print $3}'").read()
+cpeip = str((os.popen("ping -c 1 " + cpe )).readlines(-1)[0].split()[2])
 DATE = str(date) 
 
 resultlist = []
@@ -62,14 +63,14 @@ with open('temp01', 'r') as f:
              command = 'show configuration routing-instances | match ' + vpn + ' | display set | match instance-type'
              USER_S14 = input('Username_for_S14: ')
              PASSWORD_S14 = getpass.getpass(prompt='Password_for_S14:')
-             S14_IP = '#####IPADDR#####'
+             S14_IP = '###IPADDR_S14####'
              sshS14 = paramiko.SSHClient()
              sshS14.set_missing_host_key_policy(paramiko.AutoAddPolicy())
              sshS14.connect(hostname=S14_IP, username=USER_S14, password=PASSWORD_S14, look_for_keys=False, allow_agent=False)
              with sshS14.invoke_shell() as ssh:
                 USER_BPE1 = input('Username_for_BPE1: ')
                 PASSWORD_BPE1 = getpass.getpass(prompt='Password_for_BPE1:')
-                ssh.send('telnet #####IPADDR#####\n')
+                ssh.send('telnet ####IPADDR_BPE1####\n')
                 time.sleep(1)
                 ssh.send(USER_BPE1 +'\n')
                 time.sleep(1)
@@ -78,11 +79,22 @@ with open('temp01', 'r') as f:
                 ssh.recv(1000)
                 ssh.send(command + '\n')
                 time.sleep(3)
-                result = ssh.recv(5000).decode('utf-8')
+                result0 = ssh.recv(5000).decode('utf-8')
+                ssh.send('show configuration interfaces ' + interf + ' | match "unit " | no-more' + '\n')
+                time.sleep(3)
+                result1 = ssh.recv(5000).decode('utf-8')
+                unit_num_list = re.findall('unit (\d+) {', result1)
              #получил нужное значение регекспом, но нужно придумать как сделать так, чтобы вывод парамико уже был в одну строку.
-                vpn_name = re.search('.*set routing-instances (v\d{4}-\S+)\s.*', result)
+                vpn_name = re.search('.*set routing-instances (v\d{4}-\S+)\s.*', result0)
                 vpn_full_name = vpn_name.group(1)
                 vardict['vpn_full_name'] = str(vpn_full_name)
+             #Получаем список свободных юнитов:
+                free_unit_list =[] #создаем пустой список
+             #и дальше добавляем в него свободные значения:
+                for line in range(16384):
+                    if str(line) not in unit_num_list:
+                        free_unit_list.append(str(line))
+                uni = free_unit_list[4]
         elif clientname:
              clientname = translit(clientname.group(1), reversed=True)
              vardict['clientname'] = str((clientname.lower()).capitalize())
@@ -92,10 +104,10 @@ with open('temp01', 'r') as f:
 #print(vardict)
 print('-'*100)
 if vardict.get('vpn_full_name'):
-    resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'description \"##VPN:' + vardict.get('vpn_full_name') + ',' + ' ' + vardict.get('clientname') + ', ' + 'SURMS:' + vardict.get('surms')+ ',' + ' ' + DATE + ' ' + '|' + ' ' + 'SVL:' + svlan + ' ' + 'CVL:' + cvlan + ',' + ' ' + vardict.get('fizaddr') + ' ' + '|' + ' ' + cpe + ':' + cpeport + ' ' +  '|' + ' ' + 'pp' + pp + ' ' + '|' + ' ' + 'Motovilov' +' ' + '##\"')
+    resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'description \"##VPN:' + vardict.get('vpn_full_name') + ',' + ' ' + vardict.get('clientname') + ', ' + 'SURMS:' + vardict.get('surms')+ ',' + ' ' + DATE + ' ' + '|' + ' ' + 'SVL:' + svlan + ' ' + 'CVL:' + cvlan + ',' + ' ' + vardict.get('fizaddr') + ' ' + '|' + ' ' + cpe + cpeip + ':' + cpeport + ' ' +  '|' + ' ' + 'pp' + pp + ' ' + '|' + ' ' + 'Motovilov' +' ' + '##\"')
     resultlist.append('set routing-instances' + ' ' + vardict.get('vpn_full_name') + ' ' + 'interface' + ' ' + interf + '.' + uni  )
 else:
-    resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'description \"##INET,' + ' ' + vardict.get('clientname') + ', ' + 'SURMS:' + vardict.get('surms')+ ',' + ' ' + DATE + ' ' + '|' + ' ' + 'SVL:' + svlan + ' ' + 'CVL:' + cvlan + ',' + ' ' + vardict.get('fizaddr') + ' ' + '|' + ' ' + cpe + ':' + cpeport + ' ' + '|' + ' ' + 'pp' + pp + ' ' + '|' + ' ' + 'Motovilov' +' ' + '##\"')
+    resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'description \"##INET,' + ' ' + vardict.get('clientname') + ', ' + 'SURMS:' + vardict.get('surms')+ ',' + ' ' + DATE + ' ' + '|' + ' ' + 'SVL:' + svlan + ' ' + 'CVL:' + cvlan + ',' + ' ' + vardict.get('fizaddr') + ' ' + '|' + ' ' + cpe + cpeip + ':' + cpeport + ' ' + '|' + ' ' + 'pp' + pp + ' ' + '|' + ' ' + 'Motovilov' +' ' + '##\"')
 resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'vlan-tags outer' + ' ' + svlan)
 resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'vlan-tags inner' + ' ' + cvlan)
 resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet rpf-check')
