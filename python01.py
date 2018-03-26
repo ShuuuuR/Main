@@ -70,7 +70,7 @@ with open('temp01', 'r') as f:
         surms = re.search('Дата и номер:\s*(\d+\.)+\d+\s\S(\d+)', line)
         vpn = re.search('^VPN ID:\s(\d*)', line)
         clientname = re.search('^Тема:\s(.*)', line) 
-        l2vpn = re.search('^.*L2 VPN.*', line)
+        l2vpn = re.search('^.*включить клиента в L2 VPN.*', line)
         if ipmask:
              ipmask = ipmask.group(2)
              vardict['ipmask'] = str(ipmask)
@@ -89,7 +89,7 @@ with open('temp01', 'r') as f:
              command_0 = 'show configuration routing-instances | match ' + vpn + ' | display set | match instance-type'
              command_1 = 'show configuration interfaces ' + interf + ' | match "unit " | no-more' + '\n'
              #USER_S14 = input('Username_for_S14: ')
-             USER_S14 = 'user'
+             USER_S14 = 'USER'
              #PASSWORD_S14 = getpass.getpass(prompt='Password_for_S14:')
              PASSWORD_S14 = 'PASS'
              S14_IP = '###IPADDR_S14####'
@@ -139,7 +139,7 @@ print('-'*100)
 if vardict.get('l2vpn'):
     command_1 = 'show configuration interfaces ' + interf + ' | match "unit " | no-more' + '\n'
     #USER_S14 = input('Username_for_S14: ')
-    USER_S14 = 'user'
+    USER_S14 = 'USER'
     #PASSWORD_S14 = getpass.getpass(prompt='Password_for_S14:')
     PASSWORD_S14 = 'PASS'
     S14_IP = '###IPADDR_S14####'
@@ -182,7 +182,7 @@ elif vardict.get('vpn_full_name'):
 else:
     command_1 = 'show configuration interfaces ' + interf + ' | match "unit " | no-more' + '\n'
     #USER_S14 = input('Username_for_S14: ')
-    USER_S14 = 'user'
+    USER_S14 = 'USER'
     #PASSWORD_S14 = getpass.getpass(prompt='Password_for_S14:')
     PASSWORD_S14 = 'PASS'
     S14_IP = '###IPADDR_S14####'
