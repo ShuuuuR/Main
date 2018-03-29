@@ -16,10 +16,8 @@ cpeport = input('Введите порт на CPE \n')
 pp = input('Введите №ПП \n')
 bw = input('Название скоростного полисера на терминации "limXm" \n')
 date = (os.popen("date +%d.%m.%Y").read()).strip()
-#comandcpip = print('ping' + ' ' +  cpe + '-c 1 | grep PING | awk \'{print $3}\'')
-#cpeip = os.popen("ping " + cpe " -c 1 | grep PING | awk '{print $3}'").read()
-#cpeip = str((os.popen("ping -c 1 " + cpe )).readlines(-1)[0].split()[2])
 DATE = str(date) 
+
 
 def short_names(name):
     table = (
@@ -52,34 +50,45 @@ vardict = {}
 
 # тут придумать что делать с полиесром resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni 'family inet filter input' PochtaRF-512k-50-25-25-in
 
+#Regexp's
+regex_fiz = ('Примечание: Адрес предоставления услуги:\s(?P<x>.*)')
+regex_ipmask = ('([0-9]+\.)+[0-9]+\s(\/\d{2})')
+regex_ipad = ('(([0-9]+\.)+[0-9]+)\s+Адрес\sРОСТЕЛЕКОМ')
+regex_cms = ('(CMS\S)\s*(\d+\S\d+\S\d?)')
+regex_surms = ('Дата и номер:\s*(\d+\.)+\d+\s\S(\d+)')
+regex_vpn = ('^VPN ID:\s(\d*)')
+regex_clientname = ('^Тема:\s(.*)')
+regex_l2vpn = ('^.*включить клиента в L2 VPN.*')
+regex_vpn_name = ('.*set routing-instances (v\d{4}-\S+)\s.*')
+regex_unit_num_list = ('unit (\d+) {')
 
 
 
 
 with open('temp01', 'r') as f:
-    fiz = re.compile('Примечание: Адрес предоставления услуги:\s(?P<x>.*)', re.M)
+    fiz = re.compile(regex_fiz, re.M)
     fizaddr = fiz.findall(f.read()) 
+    f.seek(0)
     if fizaddr:
         fizaddr = translit(','.join(fizaddr), 'ru', reversed=True)
         vardict['fizaddr'] = str(short_names(fizaddr))
-with open('temp01', 'r') as f:
     for line in f:
-        ipmask = re.search('([0-9]+\.)+[0-9]+\s(\/\d{2})', line) 
-        ipad = re.search('(([0-9]+\.)+[0-9]+)\s+Адрес\sРОСТЕЛЕКОМ', line)
-        cms = re.search('(CMS\S)\s*(\d+\S\d+\S\d?)', line)
-        surms = re.search('Дата и номер:\s*(\d+\.)+\d+\s\S(\d+)', line)
-        vpn = re.search('^VPN ID:\s(\d*)', line)
-        clientname = re.search('^Тема:\s(.*)', line) 
-        l2vpn = re.search('^.*включить клиента в L2 VPN.*', line)
+        ipmask = re.search(regex_ipmask, line) 
+        ipad = re.search(regex_ipad, line)
+        cms = re.search(regex_cms, line)
+        surms = re.search(regex_surms, line)
+        vpn = re.search(regex_vpn, line)
+        clientname = re.search(regex_clientname, line) 
+        l2vpn = re.search(regex_l2vpn, line)
         if ipmask:
              ipmask = ipmask.group(2)
              vardict['ipmask'] = str(ipmask)
         elif ipad:
              ipad = ipad.group(1)
              vardict['ipad'] = str(ipad)
-        elif cms:
-             cms = cms.group(1) + cms.group(2)
-             vardict['cms'] = str(cms) 
+#        elif cms:
+#             cms = cms.group(1) + cms.group(2)
+#             vardict['cms'] = str(cms) 
         elif surms:
              surms = surms.group(2)
              vardict['surms'] = str(surms)
@@ -115,8 +124,8 @@ with open('temp01', 'r') as f:
                  time.sleep(3)
                  result0 = ssh.recv(5000).decode('utf-8')
                  #получил нужное значение регекспом, но нужно придумать как сделать так, чтобы вывод парамико уже был в одну строку.
-                 unit_num_list = re.findall('unit (\d+) {', result1)
-                 vpn_name = re.search('.*set routing-instances (v\d{4}-\S+)\s.*', result0)
+                 unit_num_list = re.findall(regex_unit_num_list, result1)
+                 vpn_name = re.search(regex_vpn_name, result0)
                  #Задаем для них переменные
                  vpn_full_name = vpn_name.group(1)
                  vardict['vpn_full_name'] = str(vpn_full_name)
@@ -161,13 +170,13 @@ if vardict.get('l2vpn'):
         ssh.send(command_1 + '\n')
         time.sleep(3)
         result1 = ssh.recv(5000).decode('utf-8')
-        unit_num_list = re.findall('unit (\d+) {', result1)
+        unit_num_list = re.findall(regex_unit_num_list, result1)
         free_unit_list =[] #создаем пустой список
         for line in range(16384):
             if str(line) not in unit_num_list:
                 free_unit_list.append(str(line))
         uni = free_unit_list[4]
-    resultlist.append('set interfaces' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'description \"##L2VPN,' + ' ' + vardict.get('clientname') + ',' + 'SURMS:' + vardict.get('surms')+ ',' + ' ' + DATE + ' ' + '|' + ' ' + 'SVL:' + svlan + ' ' + 'CVL:' + cvlan + ',' + ' ' + vardict.get('fizaddr') + ' ' + '|' + ' ' + cpe + ':' + cpeport + ' ' +  '|' + ' ' + 'pp' + pp + ' ' + '|' + ' ' + 'Motovilov' +' ' + '##\"') 
+    resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'description \"##L2VPN,' + ' ' + vardict.get('clientname') + ',' + 'SURMS:' + vardict.get('surms')+ ',' + ' ' + DATE + ' ' + '|' + ' ' + 'SVL:' + svlan + ' ' + 'CVL:' + cvlan + ',' + ' ' + vardict.get('fizaddr') + ' ' + '|' + ' ' + cpe + ':' + cpeport + ' ' +  '|' + ' ' + 'pp' + pp + ' ' + '|' + ' ' + 'Motovilov' +' ' + '##\"') 
     resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'apply-groups-except arp-police')
     resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'encapsulation vlan-ccc')
     resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'input-vlan-map pop-pop')
@@ -204,23 +213,25 @@ else:
         ssh.send(command_1 + '\n')
         time.sleep(3)
         result1 = ssh.recv(5000).decode('utf-8')
-        unit_num_list = re.findall('unit (\d+) {', result1)
+        unit_num_list = re.findall(regex_unit_num_list, result1)
         free_unit_list =[] #создаем пустой список
         for line in range(16384):
             if str(line) not in unit_num_list:
                 free_unit_list.append(str(line))
         uni = free_unit_list[4]
-    #print(uni)
-    #print(vardict.get('fizaddr'))
-    #print(vardict.get('clientname'))
-    #print(uni)
-    #print(vardict.get('surms'))
-    #print(DATE)
-    #print(svlan)
-    #print(cvlan)
-    #print(cpe)
-    #print(cpeport)
-    #print(pp)
+    print(uni)
+    print(vardict.get('fizaddr'))
+    print(vardict.get('clientname'))
+    print(uni)
+    print(vardict.get('surms'))
+    print(DATE)
+    print(svlan)
+    print(cvlan)
+    print(cpe)
+    print(cpeport)
+    print(pp)
+    print(vardict.get('surms'))
+    
 
     resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'description \"##INET,' + ' ' + vardict.get('clientname') + ', ' + 'SURMS:' + vardict.get('surms')+ ',' + ' ' + DATE + ' ' + '|' + ' ' + 'SVL:' + svlan + ' ' + 'CVL:' + cvlan + ',' + ' ' + vardict.get('fizaddr') + ' ' + '|' + ' ' + cpe + ':' + cpeport + ' ' + '|' + ' ' + 'pp' + pp + ' ' + '|' + ' ' + 'Motovilov' +' ' + '##\"')
     resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet rpf-check')
@@ -232,4 +243,3 @@ resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + '
 resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet policer output ' +  bw)
 #resultlist.append('set interfaces' + ' ' + interf + ' ' + 'unit' + ' ' + uni + ' ' + 'family inet address' + ' ' + vardict.get('ipad') + vardict.get('ipmask'))
 print('\n'.join(resultlist))       
-
